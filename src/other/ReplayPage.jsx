@@ -27,10 +27,14 @@ import MapGeofence from '../map/MapGeofence';
 import StatusCard from '../common/components/StatusCard';
 import MapScale from '../map/MapScale';
 import {reducePositions} from "../common/util/positions";
+import TimeLine from "../common/components/TimeLine.jsx";
 
 const useStyles = makeStyles((theme) => ({
   root: {
     height: '100%',
+  },
+  timeline: {
+    overflow: 'auto'
   },
   sidebar: {
     display: 'flex',
@@ -77,6 +81,7 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.up('md')]: {
       marginTop: theme.spacing(1),
     },
+    maxHeight: 'calc(100vh - 300px)'
   },
 }));
 
@@ -89,6 +94,7 @@ const ReplayPage = () => {
   const defaultDeviceId = useSelector((state) => state.devices.selectedId);
 
   const [positions, setPositions] = useState([]);
+  const [trips, setTrips] = useState([]);
   const [index, setIndex] = useState(0);
   const [selectedDeviceId, setSelectedDeviceId] = useState(defaultDeviceId);
   const [showCard, setShowCard] = useState(false);
@@ -152,6 +158,14 @@ const ReplayPage = () => {
     } else {
       throw Error(await response.text());
     }
+    const responseTrips = await fetch(`/api/reports/trips?${query.toString()}`,
+        {headers: { Accept: 'application/json'}});
+    if (responseTrips.ok) {
+      setTrips(await responseTrips.json());
+    } else {
+      throw Error(await responseTrips.text());
+    }
+
   });
 
   const handleDownload = () => {
@@ -214,6 +228,9 @@ const ReplayPage = () => {
                   <FastForwardIcon />
                 </IconButton>
                 {formatTime(positions[index].fixTime, 'seconds')}
+              </div>
+              <div className={classes.timeline}>
+                <TimeLine trips={trips} />
               </div>
             </>
           ) : (
