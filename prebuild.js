@@ -13,6 +13,7 @@ files.forEach((file) => {
         data.mapOpenFreeMap = 'OpenFreeMap'; // Add new key-value pair
         data.categoryTrailer = file.endsWith('es.json') ? 'Rampa' : 'Trailer'
         data.categoryTrailer2 = file.endsWith('es.json') ? 'Rampa Temperatura' : 'Caçamba'
+        data.commandPositionSingle = file.endsWith('es.json') ? 'Actualizar Posición' : 'Actualizar Posição'
         data.attributeForwardUrl = 'Forward URL'
         data.positionFixTime = 'Hora GPS'
         data.confirmBlockCommand = file.endsWith('es.json') ? 'Está seguro de enviar el comando de bloqueo?' : 'Tem a certeza que pretende bloquear o veículo?'
