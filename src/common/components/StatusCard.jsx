@@ -15,6 +15,8 @@ import {
   Tooltip,
   Menu,
   MenuItem,
+  Snackbar,
+  CircularProgress,
 } from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import CloseIcon from '@mui/icons-material/Close';
@@ -39,7 +41,6 @@ import { useCatch, useCatchCallback } from '../../reactHelper';
 import { useAttributePreference } from '../util/preferences';
 import {startStreaming} from "../util/cameras";
 import {stopStreaming} from "../util/cameras";
-import Swal from 'sweetalert2'
 import Hls from 'hls.js';
 const hls = new Hls();
 hls.on(Hls.Events.ERROR, (event, data) => {
@@ -177,6 +178,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [removing, setRemoving] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleRemove = useCatch(async (removed) => {
     if (removed) {
@@ -347,16 +350,29 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                       <IconButton
                           onClick={async () => {
                             if (!showVideo) {
-                              const resp = await startStreaming(device.uniqueId).then(r => r.json())
-                              if (resp.msg !== 'success') {
-                                Swal.fire(resp.msg)
-                                return
+                              setLoading(true);
+                              try {
+                                const resp = await startStreaming(device.uniqueId).then(r => r.json())
+                                if (resp.msg !== 'success' || resp.data.status !== 'ok') {
+                                  setAlertMessage(resp.msg + ' ' + resp.data._content)
+                                  setLoading(false);
+                                  return;
+                                }
+                                setTimeout(() => {
+                                  setShowVideo(!showVideo);
+                                  setLoading(false);
+                                }, 10000)
+                              } catch (error) {
+                                setAlertMessage(error.message);
+                                setLoading(false);
                               }
-                            } else { stopStreaming(device.uniqueId).then() }
-                            setShowVideo(!showVideo)
+                            } else {
+                              stopStreaming(device.uniqueId).then()
+                              setShowVideo(!showVideo)
+                            }
                           }}
                       >
-                        <CameraIcon className={classes.icon}/>
+                        {loading ? <CircularProgress className={classes.icon} size={16}/> : <CameraIcon className={classes.icon}/>}
                       </IconButton>
                     </Tooltip>
                     {!disableActions && !deviceReadonly && <>
@@ -394,6 +410,15 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             itemId={deviceId}
             blocked={position && position.attributes.blocked}
             onResult={(removed) => handleRemove(removed)}
+        />
+        <Snackbar
+            open={alertMessage}
+            message={alertMessage}
+            action={(
+                <IconButton size="small" color="inherit" onClick={() => setAnnouncementShown(true)}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+            )}
         />
       </>
   );
