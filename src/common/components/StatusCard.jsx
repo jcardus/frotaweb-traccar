@@ -354,7 +354,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                               try {
                                 const resp = await startStreaming(device.uniqueId).then(r => r.json())
                                 if (resp.msg !== 'success' || resp.data._content !== 'ok') {
-                                  setAlertMessage(resp.msg + ' ' + resp.data._content)
+                                  setAlertMessage(resp.msg.replace('success', '') + resp.data._content.replace('ok',''))
                                   setLoading(false);
                                   return;
                                 }
