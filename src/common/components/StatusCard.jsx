@@ -234,7 +234,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                       src={`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`}
                       type="application/vnd.apple.mpegurl"
                       onError={(e) => {
-                        if (!e.target.canPlayType('application/vnd.apple.mpegurl')) {
+                        if (Hls.isSupported()) {
+                          console.log('HLS.js is supported.')
                           const hls = new Hls();
                           hls.loadSource(`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`);
                           hls.attachMedia(e.target);
