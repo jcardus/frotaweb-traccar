@@ -39,6 +39,7 @@ import { useCatch, useCatchCallback } from '../../reactHelper';
 import { useAttributePreference } from '../util/preferences';
 import {startStreaming} from "../util/cameras";
 import {stopStreaming} from "../util/cameras";
+import Hls from 'hls.js';
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -233,6 +234,14 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                       src={`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`}
                       type="application/vnd.apple.mpegurl"
                       onError={(e) => {
+                        if (!e.target.canPlayType('application/vnd.apple.mpegurl')) {
+                          const hls = new Hls();
+                          hls.loadSource(`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`);
+                          hls.attachMedia(video);
+                          hls.on(Hls.Events.ERROR, (event, data) => {
+                            console.error('HLS.js error:', data);
+                          });
+                        }
                         console.error(e)
                         setRetry(retry + 1)
                       }}

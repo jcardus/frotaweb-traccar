@@ -5,7 +5,7 @@
   "scripts": {
     "wrangler": "npx wrangler pages dev deploy",
     "prebuild": "./prebuild.sh",
-    "build": "cd traccar-web && npm install xlsx @sentry/vite-plugin @sentry/react maplibregl-mapbox-request-transformer && npm run generate-pwa-assets && export VITE_APP_VERSION=$npm_package_version && npm run build",
+    "build": "cd traccar-web && npm install hls.js xlsx @sentry/vite-plugin @sentry/react maplibregl-mapbox-request-transformer && npm run generate-pwa-assets && export VITE_APP_VERSION=$npm_package_version && npm run build",
     "build-odoo": "./build-odoo.sh",
     "postbuild": "./postbuild.sh",
     "rebuild": "rm -rf traccar-web deploy && npm run prebuild && cd traccar-web && npm install xlsx @sentry/vite-plugin @sentry/react maplibregl-mapbox-request-transformer",
