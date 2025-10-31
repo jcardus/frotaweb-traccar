@@ -173,7 +173,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const [anchorEl, setAnchorEl] = useState(null);
 
   const [removing, setRemoving] = useState(false);
-  const [video, setVideo] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
 
   const handleRemove = useCatch(async (removed) => {
     if (removed) {
@@ -215,6 +215,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [streetView, setStreetView] = useState(false)
   const [retry, setRetry] = useState(0)
+  const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 
   useEffect(() => {
     if (position) {
@@ -231,11 +232,11 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           {device && (
               <Draggable disabled={!onClose}>
                 <Card elevation={3} className={classes.card}>
-                  {video && <video
+                  {showVideo && <video
                       src={`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`}
                       type="application/vnd.apple.mpegurl"
                       onError={(e) => {
-                        if (Hls.isSupported()) {
+                        if (!isMac) {
                           hls.loadSource(`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`);
                           hls.attachMedia(e.target);
                           hls.on(Hls.Events.ERROR, (event, data) => {
@@ -247,7 +248,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         }
                       }}
                       autoPlay controls style={{width: '100%'}}></video>}
-                  {!video &&
+                  {!showVideo &&
                       ((deviceImage || (position && streetView)) ? (
                       <>
                         <div className={classes.imageCloseButton}>
@@ -345,12 +346,14 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                     <Tooltip title={t('commandTitle')} placement="bottom">
                       <IconButton
                           onClick={async () => {
-                            if (!video) {
+                            if (!showVideo) {
                               const resp = await startStreaming(device.uniqueId).then(r => r.json())
-                              if (resp.msg === 'success') { setVideo(!video) }
-                              else { Swal.fire(resp.msg) }
-                            }
-                            else { stopStreaming(device.uniqueId).then() }
+                              if (resp.msg !== 'success') {
+                                Swal.fire(resp.msg)
+                                return
+                              }
+                            } else { stopStreaming(device.uniqueId).then() }
+                            setShowVideo(!showVideo)
                           }}
                       >
                         <CameraIcon className={classes.icon}/>
