@@ -39,6 +39,7 @@ import { useCatch, useCatchCallback } from '../../reactHelper';
 import { useAttributePreference } from '../util/preferences';
 import {startStreaming} from "../util/cameras";
 import {stopStreaming} from "../util/cameras";
+import Swal from 'sweetalert2'
 import Hls from 'hls.js';
 const hls = new Hls();
 
@@ -347,7 +348,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                             if (!video) {
                               const resp = await startStreaming(device.uniqueId).then(r => r.json())
                               if (resp.msg === 'success') { setVideo(!video) }
-                              else { alert(resp.msg) }
+                              else { Swal.fire(resp.msg) }
                             }
                             else { stopStreaming(device.uniqueId).then() }
                           }}
