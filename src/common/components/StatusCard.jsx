@@ -232,7 +232,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   {video && <video
                       src={`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`}
                       type="application/vnd.apple.mpegurl"
-                      onError={() => {
+                      onError={(e) => {
                         console.error(e)
                         setRetry(retry + 1)
                       }}
