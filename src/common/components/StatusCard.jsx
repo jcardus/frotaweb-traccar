@@ -42,6 +42,9 @@ import {stopStreaming} from "../util/cameras";
 import Swal from 'sweetalert2'
 import Hls from 'hls.js';
 const hls = new Hls();
+hls.on(Hls.Events.ERROR, (event, data) => {
+  console.error('HLS.js error:', event, data);
+});
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -239,9 +242,6 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         if (!isMac) {
                           hls.loadSource(`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`);
                           hls.attachMedia(e.target);
-                          hls.on(Hls.Events.ERROR, (event, data) => {
-                            console.error('HLS.js error:', event, data);
-                          });
                         } else {
                           console.error(e)
                           setRetry(retry + 1)
