@@ -40,6 +40,7 @@ import { useAttributePreference } from '../util/preferences';
 import {startStreaming} from "../util/cameras";
 import {stopStreaming} from "../util/cameras";
 import Hls from 'hls.js';
+const hls = new Hls();
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -146,7 +147,6 @@ const StatusRow = ({ name, content }) => {
     </TableRow>
   );
 };
-
 const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
   const classes = useStyles({ desktopPadding });
   const navigate = useNavigate();
@@ -235,16 +235,15 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                       type="application/vnd.apple.mpegurl"
                       onError={(e) => {
                         if (Hls.isSupported()) {
-                          console.log('HLS.js is supported.')
-                          const hls = new Hls();
                           hls.loadSource(`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`);
                           hls.attachMedia(e.target);
                           hls.on(Hls.Events.ERROR, (event, data) => {
                             console.error('HLS.js error:', data);
                           });
+                        } else {
+                          console.error(e)
+                          setRetry(retry + 1)
                         }
-                        console.error(e)
-                        setRetry(retry + 1)
                       }}
                       autoPlay controls style={{width: '100%'}}></video>}
                   {!video &&
@@ -344,10 +343,13 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                     </Tooltip>}
                     <Tooltip title={t('commandTitle')} placement="bottom">
                       <IconButton
-                          onClick={() => {
-                            if (!video) { startStreaming(device.uniqueId).then() }
+                          onClick={async () => {
+                            if (!video) {
+                              const resp = await startStreaming(device.uniqueId).then(r => r.json())
+                              if (resp.msg === 'success') { setVideo(!video) }
+                              else { alert(resp.msg) }
+                            }
                             else { stopStreaming(device.uniqueId).then() }
-                            setVideo(!video)
                           }}
                       >
                         <CameraIcon className={classes.icon}/>
