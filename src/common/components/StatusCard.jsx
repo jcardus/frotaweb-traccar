@@ -249,7 +249,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                           hls.loadSource(src);
                           hls.attachMedia(e.target);
                         }
-                        setTimeout(() => setRetry(retry + 1), 1000)
+                        setTimeout(() => setRetry(retry + 1), 2000)
                       }}
                       autoPlay controls style={{width: '100%'}}></video>}
                   {!showVideo && ((deviceImage || (position && streetView)) ? (
