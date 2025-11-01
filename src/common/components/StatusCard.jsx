@@ -40,12 +40,11 @@ import { devicesActions } from '../../store';
 import { useCatch, useCatchCallback } from '../../reactHelper';
 import { useAttributePreference } from '../util/preferences';
 import {startStreaming} from "../util/cameras";
-import {stopStreaming} from "../util/cameras";
 import Hls from 'hls.js';
+import {snackBarDurationLongMs} from "../util/duration";
 const hls = new Hls();
-hls.on(Hls.Events.ERROR, (event, data) => {
-  console.error('HLS.js error:', event, data);
-});
+hls.on(Hls.Events.ERROR, (event, data) => console.error('HLS.js error:', event, data))
+let count = 0
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -152,6 +151,7 @@ const StatusRow = ({ name, content }) => {
     </TableRow>
   );
 };
+
 const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPadding = 0 }) => {
   const classes = useStyles({ desktopPadding });
   const navigate = useNavigate();
@@ -178,6 +178,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [removing, setRemoving] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [channel, setChannel] = useState(0);
+  const [src, setSrc] = useState(0);
   const [alertMessage, setAlertMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -231,6 +233,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     }
   }, [position]);
 
+  useEffect(() =>
+      setSrc(`https://jimi-iothub-sec.fleetmap.io/${device.attributes.devicePassword?'live/':''}${channel}/${device.uniqueId}/hls.m3u8?retry=${retry}`), [device, channel, retry]);
 
   return (
       <>
@@ -238,21 +242,17 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           {device && (
               <Draggable disabled={!onClose}>
                 <Card elevation={3} className={classes.card}>
-                  {showVideo && <video
-                      src={`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`}
-                      type="application/vnd.apple.mpegurl"
+                  {showVideo && <video src={src}
                       onError={(e) => {
+                        console.error(e)
                         if (!isMac) {
-                          hls.loadSource(`https://jimi-iothub-sec.fleetmap.io/1/${device.uniqueId}/hls.m3u8?retry=${retry}`);
+                          hls.loadSource(src);
                           hls.attachMedia(e.target);
-                        } else {
-                          console.error(e)
-                          setRetry(retry + 1)
                         }
+                        setTimeout(() => setRetry(retry + 1), 1000)
                       }}
                       autoPlay controls style={{width: '100%'}}></video>}
-                  {!showVideo &&
-                      ((deviceImage || (position && streetView)) ? (
+                  {!showVideo && ((deviceImage || (position && streetView)) ? (
                       <>
                         <div className={classes.imageCloseButton}>
                           {onClose && (<IconButton
@@ -266,10 +266,10 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         <a target="_blank"
                            href={position && `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${position.latitude}%2C${position.longitude}&heading=${position.course}`} rel="noreferrer"
                            style={{position: 'relative', display: 'block'}}>
-                          <img
+                          <img alt=""
                               src={deviceImage ? `/api/media/${device.uniqueId}/${deviceImage}`
                                   : `https://street-view.entrack-plataforma.workers.dev/?heading=${position.course}&location=${position.latitude},${position.longitude}&size=288x144&return_error_code=true`}
-                          />
+                           />
                           <div className={classes.imageHeader}>
                             <Typography variant="body1" color="white">
                               <b>{device.name.toUpperCase()}</b><br/>
@@ -346,30 +346,34 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         <SendIcon className={classes.icon} />
                       </IconButton>
                     </Tooltip>}
-                    <Tooltip title={t('commandTitle')} placement="bottom">
+                    <Tooltip title={'Camera'} placement="bottom">
                       <IconButton
                           onClick={async () => {
                             if (!showVideo) {
                               setLoading(true);
                               try {
-                                const resp = await startStreaming(device.uniqueId).then(r => r.json())
-                                if (resp.msg !== 'success' || resp.data._content !== 'ok') {
-                                  setAlertMessage(resp.msg.replace('success', '') + resp.data._content.replace('ok',''))
+                                const _channel = device.attributes.devicePassword ? count++%2 : count++%2 + 1
+                                setChannel(_channel)
+                                const resp = await startStreaming(device.uniqueId, device.attributes.devicePassword, _channel).then(r => r.json())
+                                if (resp.data && /fail|error/i.test(resp.data._content)) {
+                                  setAlertMessage(resp.data._content)
+                                  setLoading(false);
+                                  return;
+                                }
+                                if (resp.data && resp.data._code !== '100') {
+                                  setAlertMessage(resp.data._msg)
                                   setLoading(false);
                                   return;
                                 }
                                 setTimeout(() => {
                                   setShowVideo(!showVideo);
                                   setLoading(false);
-                                }, 10000)
+                                }, 3000)
                               } catch (error) {
                                 setAlertMessage(error.message);
                                 setLoading(false);
                               }
-                            } else {
-                              stopStreaming(device.uniqueId).then()
-                              setShowVideo(!showVideo)
-                            }
+                            } else { setShowVideo(!showVideo) }
                           }}
                       >
                         {loading ? <CircularProgress className={classes.icon} size={16}/> : <CameraIcon className={classes.icon}/>}
@@ -412,13 +416,11 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             onResult={(removed) => handleRemove(removed)}
         />
         <Snackbar
+            className={classes.root}
             open={alertMessage}
             message={alertMessage}
-            action={(
-                <IconButton size="small" color="inherit" onClick={() => setAnnouncementShown(true)}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-            )}
+            onClose={() => setAlertMessage(null)}
+            autoHideDuration={snackBarDurationLongMs}
         />
       </>
   );
