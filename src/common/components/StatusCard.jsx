@@ -248,8 +248,9 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                         if (!isMac) {
                           hls.loadSource(src);
                           hls.attachMedia(e.target);
+                        } else {
+                          setTimeout(() => setRetry(retry + 1), 1000)
                         }
-                        setTimeout(() => setRetry(retry + 1), 2000)
                       }}
                       autoPlay controls style={{width: '100%'}}></video>}
                   {!showVideo && ((deviceImage || (position && streetView)) ? (
