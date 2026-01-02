@@ -1,6 +1,6 @@
 {
   "name": "frotaweb-traccar",
-  "version": "1.594.0",
+  "version": "1.596.0",
   "main": "index.js",
   "scripts": {
     "wrangler": "npx wrangler pages dev deploy",
