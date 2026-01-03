@@ -4,10 +4,7 @@
  */
 export const onRequest = async ({request, env}, cf) => {
     // Get positions from Traccar
-    const url = new URL(request.url.replace('/traccar/', '/').replace('reports/tolls', 'positions'))
-    url.host = env.TRACCAR_SERVER || 'gps.frotaweb.com'
-    url.protocol = 'http:'
-    url.port = 80
+    const url = new URL(request.url.replace('reports/tolls', 'positions'))
     const positions = await fetch(new Request(url, request), cf).then(r => r.json())
 
     if (!positions || positions.length === 0) {
@@ -94,7 +91,7 @@ async function getTollBoothNodesFromWays(tollWays) {
         return []
     }
 
-    const OVERPASS_SERVER = 'http://116.203.232.32:12345/api/interpreter'
+    const OVERPASS_SERVER = 'http://overpass.fleetmap.org:8080/api/interpreter'
 
     // Get unique way IDs
     const wayIds = [...new Set(tollWays.map(w => w.wayId))]
