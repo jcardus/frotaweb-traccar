@@ -5,14 +5,18 @@ import { map } from '../core/MapView';
 import { usePrevious } from '../../reactHelper';
 import { useAttributePreference } from '../../common/util/preferences';
 import maplibregl from "maplibre-gl";
-const popup = new maplibregl.Popup({offset: 25})
+export const popup = new maplibregl.Popup({offset: 25})
 import { createPortal } from "react-dom";
 import StatusCard from "../../common/components/StatusCard";
 import {devicesActions} from '../../store';
 import {useDispatch} from 'react-redux';
 
 let dispatchRef
-popup.on('close', () => dispatchRef && dispatchRef(devicesActions.selectId(null)))
+popup.on('close', () => {
+  if (!window.location.pathname.includes('/replay') && !window.location.pathname.includes('/reports')) {
+    dispatchRef && dispatchRef(devicesActions.selectId(null))
+  }
+})
 
 const MapSelectedDevice = ({ mapReady }) => {
   dispatchRef = useDispatch();
